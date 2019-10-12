@@ -1,5 +1,7 @@
-﻿using RestSharp;
+﻿using Newtonsoft.Json;
+using RestSharp;
 using System;
+using System.Xml;
 
 namespace BeadedStream_HON
 {
@@ -24,6 +26,45 @@ namespace BeadedStream_HON
             IRestResponse response = client.Execute(request);
 
             Console.WriteLine(response.Content);
+
+            // Convert XML to JSON
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(response.Content);
+
+            string json = JsonConvert.SerializeXmlNode(doc);
+            Console.WriteLine(json);
+
+            // correct JSON to remove unneeded XML and dashes
+            // We are working with single quotes to avoid escaping
+            json = singleToDboule(json, "'?xml':{'@version':'1.0','@encoding':'UTF-8'},", "");
+            json = singleToDboule(json, "'Devices-Detail-Response'", "'DevicesDetailResponse'");
+            json = singleToDboule(json, "'@xmlns':'http://beadedstream.com/schema/netgate','@xmlns:xsi':'http://www.w3.org/2001/XMLSchema-instance',", "");
+            json = singleToDboule(json, ":{'@Units':", ":{'Units':");
+            json = singleToDboule(json, ",'#text':", ",'text':");
+            json = singleToDboule(json, "{'@Description':", "{'Description':");
+            //json = singleToDboule(json, "", "");
+
+            Console.WriteLine("");
+            Console.WriteLine(json);
+
+            // Parse JSON for elements
+            //var jsonObject = JsonConvert.SerializeXmlNode(doc);
+            RootObject account = JsonConvert.DeserializeObject<RootObject>(json);
+
+            Console.WriteLine("Hold");
+            // Get the temperature
+
+        }
+
+        private static string singleToDboule(string originalString, string badXMLSingle, string replaceXMLSingle)
+        {
+            // Replace single quote with double quote
+            string badXMLDouble = badXMLSingle.Replace("'", "\"");
+            string replaceXMLDouble = replaceXMLSingle.Replace("'", "\""); 
+
+            return originalString.Replace(badXMLDouble, replaceXMLDouble);
         }
     }
+
+
 }
