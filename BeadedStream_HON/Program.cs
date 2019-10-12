@@ -17,7 +17,7 @@ namespace BeadedStream_HON
             // Convert XML to JSON
             string json= XMLtoJSON(response.Content);
 
-            // Correct JSON to remove unneeded XML and dashes
+            // Correct JSON to remove unneeded XML, dashes, @ and # symbols
             // We are working with single quotes to avoid escaping each double quote
             json = SingleToDboule(json, "'?xml':{'@version':'1.0','@encoding':'UTF-8'},", "");
             json = SingleToDboule(json, "'Devices-Detail-Response'", "'DevicesDetailResponse'");
