@@ -1,0 +1,33 @@
+
+1. Produce a text file with the SensorID's in the order heated
+
+Techs Name
+Total Sensors
+Total good sensors
+Total bad sensors
+Last successful sensor #
+Time completed sensor identification
+
+List of sensors in order
+  SensorID
+
+2. Create documentation with: List all tools, packages, and libraries used
+ - Explain how to use, setup the tool
+ 
+3. Add text prompt to get techs name
+
+4. Create presentation
+
+5. WARNING: MISSING EEPROM!
+ --  Add Class data for EEPROM Data Structure
+ 
+6. Wait for all sensors to be at a 1 or greater
+7. Once all heating is complete, make sure all sensors reach 7
+
+8. Provide code
+
+9. provide executable or installer
+
+10. Create parameters for input data
+
+
