@@ -21,10 +21,17 @@ namespace BeadedStream_HON
             {
                 // Wait 1 second
                 System.Threading.Thread.Sleep(1000);
+
+                // Reset console print position
                 Console.SetCursorPosition(0, 0);
+
+                // Get the latest information from the website for the sensors
                 sensorSorter.UpdateSensorData();
+
+                // See if any sensor is being intentionally heated
                 sensorSorter.CheckForNextSensor();
 
+                // Check if all sensors have been found and ordered
                 done = sensorSorter.IsDone();
 
                 OwdDS18B20 first = sensorSorter.GetSensorByHighestTemp();

@@ -21,17 +21,65 @@ namespace BeadedStream_HON
 
         public void CheckForNextSensor()
         {
+            // If we are not ready, don't check
+            if (!IsReady())
+                return;
+
+            // If we haven't received a new state after the initial startState, don't check
+            if (currentState == null)
+                return;
+
             // Remove any found sensors from Current State
+            int items = currentState.DevicesDetailResponse.owd_DS18B20.Count;
+            items = items - 1; // make the for loop easier
+            for (int i = items; i > 0; i--)
+            {
+                OwdDS18B20 sensor = currentState.DevicesDetailResponse.owd_DS18B20[i];
+                foreach (OwdDS18B20 os in orderedSensorList)
+                    if (sensor.SensorID.Equals(os.SensorID))
+                        currentState.DevicesDetailResponse.owd_DS18B20.RemoveAt(i);
+            }
 
-            // Check if any sensor is above threshold (2degrees c) compared to the starting state
+            /*
+            List<OwdDS18B20> updatedList = new List<OwdDS18B20>();
+            foreach (OwdDS18B20 sensor in currentState.DevicesDetailResponse.owd_DS18B20)
+            {
+                bool foundIt = false;
+                // Trying to avoid using complicated LINQ code for future maintainability
+                foreach(OwdDS18B20 os in orderedSensorList)
+                {
+                    if (sensor.SensorID.Equals(os.SensorID))
+                    {
+                        foundIt = true;
+                        break;
+                    }
+                }
 
-            // If it is above the threshold, add it to the "Hot List"
+
+                if (!foundIt)
+                    updatedList.Add(sensor);
+            }
+            */
+
+                // Check if any sensor is above threshold (2degrees c) compared to the starting state
+                
+
+                // If it is above the threshold, add it to the "Hot List"
         }
 
+        // If the "Hot List" has the same number of elements as the StartState.DevicesDetailResponse.DevicesConnected
+        // then return true
         public bool IsDone()
         {
-            // If the "Hot List" has the same number of elements as the StartState.DevicesDetailResponse.DevicesConnected
-            // then return true
+            // Can't be done if we didn't start
+            if (startState == null)
+                return false;
+
+            int devicesConnected = 0;
+            Int32.TryParse(startState.DevicesDetailResponse.DevicesConnected, out devicesConnected);
+
+            if (devicesConnected > 0 && orderedSensorList.Count >= devicesConnected)
+                return true;
 
             return false;
         }
@@ -136,14 +184,6 @@ namespace BeadedStream_HON
             RootObject wireData = JsonConvert.DeserializeObject<RootObject>(json);
 
             return wireData;
-        }
-
-
-        private static string getHighestTemp(Array sensors)
-        {
-
-
-            return "";
         }
 
         // Sort the sensors in descending order, unless passing in something else
