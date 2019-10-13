@@ -151,7 +151,8 @@ namespace BeadedStream_HON
 
         public void PrintSensors(RootObject wireData, string prefixString)
         {
-            PrintSensors(wireData.DevicesDetailResponse.owd_DS18B20, prefixString);
+            if (wireData != null)
+                PrintSensors(wireData.DevicesDetailResponse.owd_DS18B20, prefixString);
         }
 
         public void PrintSensors(List<OwdDS18B20> sensors, string prefixString)
