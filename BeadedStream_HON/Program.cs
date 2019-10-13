@@ -1,29 +1,54 @@
-﻿using RestSharp;
+﻿using Newtonsoft.Json;
+using RestSharp;
 using System;
+using System.Collections;
+using System.Xml;
 
 namespace BeadedStream_HON
 {
     class Program
     {
+        private static bool debug = false;
+
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            SensorSorter sensorSorter = new SensorSorter();
+            sensorSorter.Initialize(); // Get starting state
 
+            bool done = false;
 
-            var client = new RestClient("http://169.254.1.1/details.xml");
-            var request = new RestRequest(Method.GET);
-            request.AddHeader("cache-control", "no-cache");
-            request.AddHeader("Connection", "keep-alive");
-            request.AddHeader("Accept-Encoding", "gzip, deflate");
-            request.AddHeader("Host", "169.254.1.1");
-            request.AddHeader("Postman-Token", "bdd4e9d9-381e-4e37-ad3a-694bd4965381,64e4c9db-f3f9-4c87-bba9-944fd4c5ac07");
-            request.AddHeader("Cache-Control", "no-cache");
-            request.AddHeader("Accept", "*/*");
-            request.AddHeader("User-Agent", "PostmanRuntime/7.17.1");
-            request.AddHeader("Content-Type", "application/json");
-            IRestResponse response = client.Execute(request);
+            while (!done)
+            {
+                // Wait 1 second
+                System.Threading.Thread.Sleep(1000);
 
-            Console.WriteLine(response.Content);
+                // Reset console print position
+                Console.Clear();
+                Console.SetCursorPosition(0, 0);
+
+                // Get the latest information from the website for the sensors
+                sensorSorter.UpdateSensorData();
+
+                // Print values
+                sensorSorter.PrintAllSensors();
+
+                // See if any sensor is being intentionally heated
+                sensorSorter.CheckForNextSensor();
+
+                // Check if all sensors have been found and ordered
+                done = sensorSorter.IsDone();
+
+                // Exit loop on key press
+                if (Console.KeyAvailable)
+                    if (Console.ReadKey(true).Key == ConsoleKey.Escape)
+                        break;
+            }
+
+            // Save, store, print, or burn EEPROM from list
+            Console.Beep();
+            Console.Beep();
+            Console.Beep();
+            sensorSorter.PrintSensors(sensorSorter.orderedSensorList, "Final: ");
         }
     }
 }
