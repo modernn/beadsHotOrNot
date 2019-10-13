@@ -53,6 +53,11 @@ namespace BeadedStream_HON
             Console.Beep();
             Console.Beep();
             sensorSorter.PrintSensors(sensorSorter.orderedSensorList, "Final: ");
+
+            string report = sensorSorter.GenerateReportOutput();
+            Console.Write(report);
+
+            System.IO.File.WriteAllText(@".\report.txt", report);
         }
     }
 }

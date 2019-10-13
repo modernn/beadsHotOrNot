@@ -19,6 +19,8 @@ namespace BeadedStream_HON
         private int totalSensors;
         private bool hasEEPROM;
 
+        private DateTime completed;
+
         enum States { 
             WaitingForWire, 
             WaitingForDevices,
@@ -117,7 +119,10 @@ namespace BeadedStream_HON
 
             int devicesConnected = startState.DevicesDetailResponse.owd_DS18B20.Count;
             if (devicesConnected > 0 && orderedSensorList.Count >= devicesConnected)
+            {
+                completed = DateTime.Now;
                 return true;
+            }
 
             return false;
         }
@@ -234,12 +239,16 @@ namespace BeadedStream_HON
                         state = States.WaitingForWire;
                         currentState = null;
                         startState =  null;
+                        return;
                     }
                 }
 
                 // As long as we are not already learning, update the state to ReadyForLearning
-                if (state < States.LearningInProgress)
+                if (state < States.ReadyForLearning)
+                {
                     state = States.ReadyForLearning;
+                    GatherWireInformation(startState);
+                }
 
                 // If we've identifed at least one, we are in progress of learning
                 if (this.orderedSensorList.Count > 0)
@@ -334,7 +343,7 @@ namespace BeadedStream_HON
             return originalString.Replace(badXMLDouble, replaceXMLDouble);
         }
 
-        public string generateReportOutput()
+        public string GenerateReportOutput()
         {
             string pattern = 
 @"Techs Name                {0}
@@ -346,7 +355,19 @@ Time completed:             {5}
 
 Sensors:";
 
-            string result = string.Format(pattern, this.techName);
+            string result = string.Format(pattern, 
+                this.techName, 
+                this.totalSensors, 
+                this.orderedSensorList.Count,
+                this.totalSensors - this.orderedSensorList.Count,
+                this.orderedSensorList.Count,
+                this.completed.ToString());
+
+            foreach(OwdDS18B20 sensor in this.orderedSensorList)
+            {
+                result = result + System.Environment.NewLine;
+                result = result + sensor.SensorID;
+            }
 
             return result;
         }
