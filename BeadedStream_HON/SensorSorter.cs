@@ -11,45 +11,65 @@ namespace BeadedStream_HON
     {
         private static bool debug = false;
         RootObject startState;
+        RootObject currentState;
+        List<OwdDS18B20> orderedSensorList = new List<OwdDS18B20>();
 
         public void Initialize()
         {
-
+            UpdateSensorData();
         }
 
-
-        public void getHighestTemp()
+        public void CheckForNextSensor()
         {
+            // Remove any found sensors from Current State
 
+            // Check if any sensor is above threshold (2degrees c) compared to the starting state
+
+            // If it is above the threshold, add it to the "Hot List"
         }
 
-        public static OwdDS18B20 gatherSensors()
+        public bool IsDone()
         {
+            // If the "Hot List" has the same number of elements as the StartState.DevicesDetailResponse.DevicesConnected
+            // then return true
 
-            // Download the details.xml file
-            IRestResponse response = GetXMLFile("http://169.254.1.1/details.xml");
+            return false;
+        }
 
-            // Convert XML to JSON
-            string json = XMLtoJSON(response.Content);
+        public bool IsReady()
+        {
+            bool isReady = true;
 
-            // Correct JSON to remove unneeded XML, dashes, @ and # symbols
-            // We are working with single quotes to avoid escaping each double quote
-            json = SingleToDboule(json, "'?xml':{'@version':'1.0','@encoding':'UTF-8'},", "");
-            json = SingleToDboule(json, "'Devices-Detail-Response'", "'DevicesDetailResponse'");
-            json = SingleToDboule(json, "'@xmlns':'http://beadedstream.com/schema/netgate','@xmlns:xsi':'http://www.w3.org/2001/XMLSchema-instance',", "");
-            json = SingleToDboule(json, ":{'@Units':", ":{'Units':");
-            json = SingleToDboule(json, ",'#text':", ",'text':");
-            json = SingleToDboule(json, "{'@Description':", "{'Description':");
+            if (startState == null)
+                isReady = false;
 
-            // Parse JSON for elements
-            //var jsonObject = JsonConvert.SerializeXmlNode(doc);
-            RootObject wireData = JsonConvert.DeserializeObject<RootObject>(json);
+            if (startState.DevicesDetailResponse.owd_DS18B20.Count == 0)
+                isReady = false;
+
+            // Check if any of the sensors are not ready (health = 7)
+            // Meaning, it got 7 consecutive successful responses back when checking the sensor
+            foreach (OwdDS18B20 sensor in startState.DevicesDetailResponse.owd_DS18B20)
+            {
+                if (!sensor.Health.Trim().Equals('7'))
+                {
+                    isReady = false;
+                    break;
+                }
+            }
+
+            return isReady;
+        }
+
+        public OwdDS18B20 GetSensorByHighestTemp(RootObject wireData = null)
+        {
+            if (wireData == null)
+                wireData = currentState;
+
+            if (wireData == null)
+                wireData = startState;
 
             // Get the temperature
-            foreach (OwdDS18B20 sensor in wireData.DevicesDetailResponse.owd_DS18B20)
-            {
-                Console.WriteLine("O: " + sensor.SensorID + ": " + sensor.TemperatureCalibrated);
-            }
+            PrintSensors(wireData, "o: ");
 
             wireData = SortSensorsByTemp(wireData, "desc");
 
@@ -61,14 +81,61 @@ namespace BeadedStream_HON
             var first = wireData.DevicesDetailResponse.owd_DS18B20[0];
 
             // Print the temperatures and ID's
-            foreach (OwdDS18B20 sensor in wireData.DevicesDetailResponse.owd_DS18B20)
-            {
-                Console.WriteLine("S: " + sensor.SensorID + ": " + sensor.TemperatureCalibrated);
-            }
+            PrintSensors(wireData, "S: ");
 
             Console.WriteLine("F: " + first.SensorID + ": " + first.TemperatureCalibrated);
 
-            return(first);
+            return (first);
+        }
+
+        public void PrintSensors(RootObject wireData, string prefixString)
+        {
+            foreach (OwdDS18B20 sensor in wireData.DevicesDetailResponse.owd_DS18B20)
+            {
+                Console.WriteLine(prefixString + sensor.SensorID + ": " + sensor.Health + ": " + sensor.TemperatureCalibrated);
+            }
+            Console.WriteLine("");
+        }
+
+        // Call this as often as you want to update the sensor data
+        // The data will store in currentState
+        // The first time it will instead store in startState
+        // If the health of the sensors are not all 7, continue to wait
+        // This will be used to determine each sensors individual temp increase beyond a threshold
+        public void UpdateSensorData()
+        {
+            RootObject wireData = GetSensorData();
+            if (startState == null || !IsReady())
+                startState = wireData;
+            else
+                currentState = wireData;
+        }
+
+        // This is used to get sensor data if you don't care about storing that data
+        // This is also used by UpdateSensorData to store the data in this instance.
+        public static RootObject GetSensorData()
+        {
+
+            // Download the details.xml file
+            IRestResponse response = GetXMLFile("http://169.254.1.1/details.xml");
+
+            // Convert XML to JSON
+            string json = XMLtoJSON(response.Content);
+
+            // Correct JSON to remove unneeded XML, dashes, @ and # symbols
+            // We are working with single quotes to avoid escaping each double quote
+            json = SingleToDouble(json, "'?xml':{'@version':'1.0','@encoding':'UTF-8'},", "");
+            json = SingleToDouble(json, "'Devices-Detail-Response'", "'DevicesDetailResponse'");
+            json = SingleToDouble(json, "'@xmlns':'http://beadedstream.com/schema/netgate','@xmlns:xsi':'http://www.w3.org/2001/XMLSchema-instance',", "");
+            json = SingleToDouble(json, ":{'@Units':", ":{'Units':");
+            json = SingleToDouble(json, ",'#text':", ",'text':");
+            json = SingleToDouble(json, "{'@Description':", "{'Description':");
+
+            // Parse JSON for elements
+            //var jsonObject = JsonConvert.SerializeXmlNode(doc);
+            RootObject wireData = JsonConvert.DeserializeObject<RootObject>(json);
+
+            return wireData;
         }
 
 
@@ -124,7 +191,7 @@ namespace BeadedStream_HON
             return response;
         }
 
-        private static string SingleToDboule(string originalString, string badXMLSingle, string replaceXMLSingle)
+        private static string SingleToDouble(string originalString, string badXMLSingle, string replaceXMLSingle)
         {
             // Replace single quote with double quote
             string badXMLDouble = badXMLSingle.Replace("'", "\"");

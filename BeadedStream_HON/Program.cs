@@ -12,16 +12,30 @@ namespace BeadedStream_HON
 
         static void Main(string[] args)
         {
-            ArrayList orderedList = new ArrayList();
+            SensorSorter sensorSorter = new SensorSorter();
+            sensorSorter.Initialize(); // Get starting state
 
-            do
+            bool done = false;
+
+            while (!done)
             {
-                while (!Console.KeyAvailable)
-                {
-                    Console.SetCursorPosition(0, 0);
-                    OwdDS18B20 first = SensorSorter.gatherSensors();
-                }
-            } while (Console.ReadKey(true).Key != ConsoleKey.Escape);
+                // Wait 1 second
+                System.Threading.Thread.Sleep(1000);
+                Console.SetCursorPosition(0, 0);
+                sensorSorter.UpdateSensorData();
+                sensorSorter.CheckForNextSensor();
+
+                done = sensorSorter.IsDone();
+
+                OwdDS18B20 first = sensorSorter.GetSensorByHighestTemp();
+
+                // Exit loop on key press
+                if (Console.KeyAvailable)
+                    if (Console.ReadKey(true).Key == ConsoleKey.Escape)
+                        break;
+            }
+
+            // Save, store, print, or burn EEPROM from list
 
         }
     }
