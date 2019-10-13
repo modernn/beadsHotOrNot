@@ -65,6 +65,7 @@ namespace BeadedStream_HON
                 // If it is above the threshold, add it to the "Hot List"
                 if (currentTemp > startTemp + threshold)
                 {
+                    Console.Beep();
                     orderedSensorList.Add(sensor.Value);
                     break; // Once we find the one that is above start temp by threshold, save it
                 }

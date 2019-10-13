@@ -45,6 +45,9 @@ namespace BeadedStream_HON
             }
 
             // Save, store, print, or burn EEPROM from list
+            Console.Beep();
+            Console.Beep();
+            Console.Beep();
             sensorSorter.PrintSensors(sensorSorter.orderedSensorList, "Final: ");
         }
     }
