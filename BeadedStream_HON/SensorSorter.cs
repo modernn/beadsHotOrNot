@@ -14,10 +14,42 @@ namespace BeadedStream_HON
         RootObject currentState;
         public List<OwdDS18B20> orderedSensorList { get; set; } 
 
+        private string techName;
+        private int totalDevices;
+        private int totalSensors;
+        private bool hasEEPROM;
+
+        enum States { 
+            WaitingForWire, 
+            WaitingForDevices,
+            WaitingForInitialHealth, 
+            ReadyForLearning, 
+            LearningInProgress, 
+            WaitingForCompleteHealth, 
+            GeneratingReport, 
+            Done };
+
+        States state;
+
         public void Initialize()
         {
+            Initialize("");
+        }
+
+        public void Initialize(string techName)
+        {
+            this.techName = techName;
             orderedSensorList = new List<OwdDS18B20>();
+            state = new States();
+            state = States.WaitingForWire;
             UpdateSensorData();
+        }
+
+        private void GatherWireInformation(RootObject wireData)
+        {
+            int.TryParse(wireData.DevicesDetailResponse.DevicesConnected, out this.totalDevices);
+            this.totalSensors = wireData.DevicesDetailResponse.owd_DS18B20.Count;
+            this.hasEEPROM = (wireData.DevicesDetailResponse.owd_DS18B20 != null);
         }
 
         public void CheckForNextSensor()
@@ -80,7 +112,7 @@ namespace BeadedStream_HON
             if (startState == null)
                 return false;
 
-            Console.WriteLine();
+            Console.WriteLine("State: " + this.state.ToString());
             Console.WriteLine("Found: " + orderedSensorList.Count);
 
             int devicesConnected = startState.DevicesDetailResponse.owd_DS18B20.Count;
@@ -92,19 +124,24 @@ namespace BeadedStream_HON
 
         public bool IsReady()
         {
-            bool isReady = true;
-
             if (startState == null)
-                isReady = false;
+            {
+                state = States.WaitingForWire;
+                return false;
+            }
 
             if (startState.DevicesDetailResponse.owd_DS18B20.Count == 0)
-                isReady = false;
+            {
+                state = States.WaitingForDevices;
+                return false;
+            }
 
             int health = 0;
 
             // Check if any of the sensors are not ready (health = 1-7)
             // Meaning, it got at least 1 successful response back when checking the sensor
             // 7 = got 7 successful sensors readings back
+            bool isReady = true;
             foreach (OwdDS18B20 sensor in startState.DevicesDetailResponse.owd_DS18B20)
             {
                 int.TryParse(sensor.Health, out health);
@@ -114,6 +151,11 @@ namespace BeadedStream_HON
                     break;
                 }
             }
+
+            // If we are not ready at this point, 
+            // it means not all sensors are reporting back at least one time
+            if (!isReady)
+                state = States.WaitingForInitialHealth;
 
             return isReady;
         }
@@ -152,7 +194,6 @@ namespace BeadedStream_HON
             PrintSensors(currentState, "Current:  ");
         }
 
-
         public void PrintSensors(RootObject wireData, string prefixString)
         {
             if (wireData != null)
@@ -177,9 +218,33 @@ namespace BeadedStream_HON
         {
             RootObject wireData = GetSensorData();
             if (startState == null || !IsReady())
+            {
                 startState = wireData;
+            }
             else
+            {
                 currentState = wireData;
+
+                if (currentState != null)
+                {
+                    int connected = 0;
+                    int.TryParse(currentState.DevicesDetailResponse.DevicesConnected, out connected);
+                    if (connected == 0)
+                    {
+                        state = States.WaitingForWire;
+                        currentState = null;
+                        startState =  null;
+                    }
+                }
+
+                // As long as we are not already learning, update the state to ReadyForLearning
+                if (state < States.LearningInProgress)
+                    state = States.ReadyForLearning;
+
+                // If we've identifed at least one, we are in progress of learning
+                if (this.orderedSensorList.Count > 0)
+                    state = States.LearningInProgress;
+            }
         }
 
         // This is used to get sensor data if you don't care about storing that data
@@ -267,6 +332,23 @@ namespace BeadedStream_HON
             string replaceXMLDouble = replaceXMLSingle.Replace("'", "\"");
 
             return originalString.Replace(badXMLDouble, replaceXMLDouble);
+        }
+
+        public string generateReportOutput()
+        {
+            string pattern = 
+@"Techs Name                {0}
+Total Sensors:              {1}
+Total good sensors:         {2}
+Total bad sensors:          {3}
+Last successful sensor #    {4}
+Time completed:             {5}
+
+Sensors:";
+
+            string result = string.Format(pattern, this.techName);
+
+            return result;
         }
     }
 }

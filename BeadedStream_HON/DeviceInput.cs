@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -77,23 +78,60 @@ public class OwdDS18B20
 
     public class DevicesDetailResponse
     {
-       public string PollCount { get; set; }
+        [JsonConverter(typeof(MyConverter))]
+        public string PollCount { get; set; }
+        [JsonConverter(typeof(MyConverter))]
         public string DevicesConnected { get; set; }
+        [JsonConverter(typeof(MyConverter))]
         public string LoopTime { get; set; }
+        [JsonConverter(typeof(MyConverter))]
         public string DevicesConnectedChannel1 { get; set; }
+        [JsonConverter(typeof(MyConverter))]
         public string DataErrorsChannel1 { get; set; }
+        [JsonConverter(typeof(MyConverter))]
         public string VoltageChannel1 { get; set; }
+        [JsonConverter(typeof(MyConverter))]
         public string VoltagePower { get; set; }
+        [JsonConverter(typeof(MyConverter))]
         public string DeviceName { get; set; }
+        [JsonConverter(typeof(MyConverter))]
         public string HostName { get; set; }
+        [JsonConverter(typeof(MyConverter))]
         public string MACAddress { get; set; }
+        [JsonConverter(typeof(MyConverter))]
         public string DateTime { get; set; }
         public OwdDS28EC20 owd_DS28EC20 { get; set; }
         public List<OwdDS18B20> owd_DS18B20 { get; set; }
     }
-public class RootObject
-{
-    public DevicesDetailResponse DevicesDetailResponse { get; set; }
-}
+    public class RootObject
+    {
+        public DevicesDetailResponse DevicesDetailResponse { get; set; }
+    }
+
+    public class MyConverter : JsonConverter
+    {
+        public override bool CanConvert(Type objectType)
+        {
+            return false;
+        }
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            if (reader.TokenType == JsonToken.StartArray)
+            {
+                JArray array = JArray.Load(reader);
+                
+                return "0";
+                //return serializer.Deserialize(reader, objectType);
+            }
+
+            return reader.Value.ToString();
+        }
+
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
 }
