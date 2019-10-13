@@ -61,7 +61,9 @@ namespace BeadedStream_HON
                 return;
 
             // If we haven't received a new state after the initial startState, don't check
-            if (currentState == null)
+            if (currentState == null 
+                || currentState.DevicesDetailResponse == null
+                || currentState.DevicesDetailResponse.owd_DS18B20 == null)
                 return;
 
             // Remove any found sensors from Current State
@@ -111,11 +113,14 @@ namespace BeadedStream_HON
         public bool IsDone()
         {
             // Can't be done if we didn't start
-            if (startState == null)
+            if (startState == null || startState.DevicesDetailResponse == null)
                 return false;
 
             Console.WriteLine("State: " + this.state.ToString());
             Console.WriteLine("Found: " + orderedSensorList.Count);
+
+            if (startState.DevicesDetailResponse.owd_DS18B20 == null)
+                return false;
 
             int devicesConnected = startState.DevicesDetailResponse.owd_DS18B20.Count;
             if (devicesConnected > 0 && orderedSensorList.Count >= devicesConnected)
@@ -135,7 +140,7 @@ namespace BeadedStream_HON
                 return false;
             }
 
-            if (startState.DevicesDetailResponse.owd_DS18B20.Count == 0)
+            if (startState.DevicesDetailResponse.owd_DS18B20 == null || startState.DevicesDetailResponse.owd_DS18B20.Count == 0)
             {
                 state = States.WaitingForDevices;
                 return false;
@@ -206,7 +211,10 @@ namespace BeadedStream_HON
         }
 
         public void PrintSensors(List<OwdDS18B20> sensors, string prefixString)
-        {
+        { 
+            if (sensors == null)
+                return;
+
             foreach (OwdDS18B20 sensor in sensors)
             {
                 Console.WriteLine(prefixString + sensor.SensorID + ": " + sensor.Health + ": " + sensor.TemperatureCalibrated);
