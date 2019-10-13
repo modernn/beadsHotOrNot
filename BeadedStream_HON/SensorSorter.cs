@@ -12,10 +12,11 @@ namespace BeadedStream_HON
         private static bool debug = false;
         RootObject startState;
         RootObject currentState;
-        List<OwdDS18B20> orderedSensorList = new List<OwdDS18B20>();
+        public List<OwdDS18B20> orderedSensorList { get; set; } 
 
         public void Initialize()
         {
+            orderedSensorList = new List<OwdDS18B20>();
             UpdateSensorData();
         }
 
@@ -32,7 +33,7 @@ namespace BeadedStream_HON
             // Remove any found sensors from Current State
             int items = currentState.DevicesDetailResponse.owd_DS18B20.Count;
             items--; // make the for loop easier
-            for (int i = items; i > 0; i--)
+            for (int i = items; i >= 0; i--)
             {
                 OwdDS18B20 sensor = currentState.DevicesDetailResponse.owd_DS18B20[i];
                 foreach (OwdDS18B20 os in orderedSensorList)
@@ -141,9 +142,21 @@ namespace BeadedStream_HON
             return (first);
         }
 
+        public void PrintAllSensors()
+        {
+            PrintSensors(startState, "Original: ");
+            PrintSensors(currentState, "Current:  ");
+        }
+
+
         public void PrintSensors(RootObject wireData, string prefixString)
         {
-            foreach (OwdDS18B20 sensor in wireData.DevicesDetailResponse.owd_DS18B20)
+            PrintSensors(wireData.DevicesDetailResponse.owd_DS18B20, prefixString);
+        }
+
+        public void PrintSensors(List<OwdDS18B20> sensors, string prefixString)
+        {
+            foreach (OwdDS18B20 sensor in sensors)
             {
                 Console.WriteLine(prefixString + sensor.SensorID + ": " + sensor.Health + ": " + sensor.TemperatureCalibrated);
             }

@@ -23,18 +23,20 @@ namespace BeadedStream_HON
                 System.Threading.Thread.Sleep(1000);
 
                 // Reset console print position
+                Console.Clear();
                 Console.SetCursorPosition(0, 0);
 
                 // Get the latest information from the website for the sensors
                 sensorSorter.UpdateSensorData();
+
+                // Print values
+                sensorSorter.PrintAllSensors();
 
                 // See if any sensor is being intentionally heated
                 sensorSorter.CheckForNextSensor();
 
                 // Check if all sensors have been found and ordered
                 done = sensorSorter.IsDone();
-
-                OwdDS18B20 first = sensorSorter.GetSensorByHighestTemp();
 
                 // Exit loop on key press
                 if (Console.KeyAvailable)
@@ -43,7 +45,7 @@ namespace BeadedStream_HON
             }
 
             // Save, store, print, or burn EEPROM from list
-
+            sensorSorter.PrintSensors(sensorSorter.orderedSensorList, "Final: ");
         }
     }
 }
