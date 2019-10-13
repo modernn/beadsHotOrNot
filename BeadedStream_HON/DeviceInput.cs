@@ -26,20 +26,20 @@ public class OwdDS18B20
 }
 
     public class DevicesDetailResponse
-{
-   public string PollCount { get; set; }
-    public string DevicesConnected { get; set; }
-    public string LoopTime { get; set; }
-    public string DevicesConnectedChannel1 { get; set; }
-    public string DataErrorsChannel1 { get; set; }
-    public string VoltageChannel1 { get; set; }
-    public string VoltagePower { get; set; }
-    public string DeviceName { get; set; }
-    public string HostName { get; set; }
-    public string MACAddress { get; set; }
-    public string DateTime { get; set; }
-    public List<OwdDS18B20> owd_DS18B20 { get; set; }
-}
+    {
+       public string PollCount { get; set; }
+        public string DevicesConnected { get; set; }
+        public string LoopTime { get; set; }
+        public string DevicesConnectedChannel1 { get; set; }
+        public string DataErrorsChannel1 { get; set; }
+        public string VoltageChannel1 { get; set; }
+        public string VoltagePower { get; set; }
+        public string DeviceName { get; set; }
+        public string HostName { get; set; }
+        public string MACAddress { get; set; }
+        public string DateTime { get; set; }
+        public List<OwdDS18B20> owd_DS18B20 { get; set; }
+    }
 public class RootObject
 {
     public DevicesDetailResponse DevicesDetailResponse { get; set; }

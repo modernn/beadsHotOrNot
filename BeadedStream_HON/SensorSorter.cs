@@ -83,8 +83,7 @@ namespace BeadedStream_HON
             Console.WriteLine();
             Console.WriteLine("Found: " + orderedSensorList.Count);
 
-            int devicesConnected = 0;
-            Int32.TryParse(startState.DevicesDetailResponse.DevicesConnected, out devicesConnected);
+            int devicesConnected = startState.DevicesDetailResponse.owd_DS18B20.Count;
             if (devicesConnected > 0 && orderedSensorList.Count >= devicesConnected)
                 return true;
 
