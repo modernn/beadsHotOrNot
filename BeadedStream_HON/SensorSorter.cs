@@ -100,11 +100,15 @@ namespace BeadedStream_HON
             if (startState.DevicesDetailResponse.owd_DS18B20.Count == 0)
                 isReady = false;
 
-            // Check if any of the sensors are not ready (health = 7)
-            // Meaning, it got 7 consecutive successful responses back when checking the sensor
+            int health = 0;
+
+            // Check if any of the sensors are not ready (health = 1-7)
+            // Meaning, it got at least 1 successful response back when checking the sensor
+            // 7 = got 7 successful sensors readings back
             foreach (OwdDS18B20 sensor in startState.DevicesDetailResponse.owd_DS18B20)
             {
-                if (!sensor.Health.Trim().Equals("7"))
+                int.TryParse(sensor.Health, out health);
+                if (health < 1)
                 {
                     isReady = false;
                     break;
@@ -186,6 +190,9 @@ namespace BeadedStream_HON
             // Download the details.xml file
             IRestResponse response = GetXMLFile("http://169.254.1.1/details.xml");
 
+            // Save the XML file
+            System.IO.File.WriteAllText(@".\details.xml", response.Content);
+
             // Convert XML to JSON
             string json = XMLtoJSON(response.Content);
 
@@ -225,6 +232,9 @@ namespace BeadedStream_HON
 
             if (debug)
                 Console.WriteLine(json);
+
+            // Save the JSON file
+            System.IO.File.WriteAllText(@".\details.json", json);
 
             return json;
         }
