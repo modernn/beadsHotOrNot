@@ -31,7 +31,7 @@ namespace BeadedStream_HON
 
             // Remove any found sensors from Current State
             int items = currentState.DevicesDetailResponse.owd_DS18B20.Count;
-            items = items - 1; // make the for loop easier
+            items--; // make the for loop easier
             for (int i = items; i > 0; i--)
             {
                 OwdDS18B20 sensor = currentState.DevicesDetailResponse.owd_DS18B20[i];
@@ -40,31 +40,34 @@ namespace BeadedStream_HON
                         currentState.DevicesDetailResponse.owd_DS18B20.RemoveAt(i);
             }
 
-            /*
-            List<OwdDS18B20> updatedList = new List<OwdDS18B20>();
+            // Add the Sensors to a dictionary with the ID as the key
+            Dictionary<string, OwdDS18B20> dictStartingState = new Dictionary<string, OwdDS18B20>();
+            Dictionary<string, OwdDS18B20> dictCurrentState = new Dictionary<string, OwdDS18B20>();
+
+            foreach (OwdDS18B20 sensor in startState.DevicesDetailResponse.owd_DS18B20)
+                dictStartingState.Add(sensor.SensorID, sensor);
+
             foreach (OwdDS18B20 sensor in currentState.DevicesDetailResponse.owd_DS18B20)
+                dictCurrentState.Add(sensor.SensorID, sensor);
+
+            // Check if any sensor is above threshold (2degrees c) compared to the starting state
+            // Loop over the CURRENT state, because we've removed some of the sensors that 
+            // we've already found from the list above
+            float currentTemp = 0.0f;
+            float startTemp = 0.0f;
+            float threshold = 2.0f;
+            foreach (KeyValuePair<string, OwdDS18B20> sensor in dictCurrentState)
             {
-                bool foundIt = false;
-                // Trying to avoid using complicated LINQ code for future maintainability
-                foreach(OwdDS18B20 os in orderedSensorList)
-                {
-                    if (sensor.SensorID.Equals(os.SensorID))
-                    {
-                        foundIt = true;
-                        break;
-                    }
-                }
-
-
-                if (!foundIt)
-                    updatedList.Add(sensor);
-            }
-            */
-
-                // Check if any sensor is above threshold (2degrees c) compared to the starting state
-                
+                float.TryParse(dictStartingState[sensor.Key].TemperatureCalibrated, out startTemp);
+                float.TryParse(sensor.Value.TemperatureCalibrated, out currentTemp);
 
                 // If it is above the threshold, add it to the "Hot List"
+                if (currentTemp > startTemp + threshold)
+                {
+                    orderedSensorList.Add(sensor.Value);
+                    break; // Once we find the one that is above start temp by threshold, save it
+                }
+            }
         }
 
         // If the "Hot List" has the same number of elements as the StartState.DevicesDetailResponse.DevicesConnected
@@ -75,9 +78,11 @@ namespace BeadedStream_HON
             if (startState == null)
                 return false;
 
+            Console.WriteLine();
+            Console.WriteLine("Found: " + orderedSensorList.Count);
+
             int devicesConnected = 0;
             Int32.TryParse(startState.DevicesDetailResponse.DevicesConnected, out devicesConnected);
-
             if (devicesConnected > 0 && orderedSensorList.Count >= devicesConnected)
                 return true;
 
@@ -98,7 +103,7 @@ namespace BeadedStream_HON
             // Meaning, it got 7 consecutive successful responses back when checking the sensor
             foreach (OwdDS18B20 sensor in startState.DevicesDetailResponse.owd_DS18B20)
             {
-                if (!sensor.Health.Trim().Equals('7'))
+                if (!sensor.Health.Trim().Equals("7"))
                 {
                     isReady = false;
                     break;
