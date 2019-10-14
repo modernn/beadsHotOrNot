@@ -22,6 +22,7 @@ namespace BeadedStream_HON
         private DateTime completed;
 
         enum States { 
+            WaitingForWebsite,
             WaitingForWire, 
             WaitingForDevices,
             WaitingForInitialHealth, 
@@ -112,12 +113,12 @@ namespace BeadedStream_HON
         // then return true
         public bool IsDone()
         {
+            Console.WriteLine("State: " + this.state.ToString());
+            Console.WriteLine("Found: " + orderedSensorList.Count);
+
             // Can't be done if we didn't start
             if (startState == null || startState.DevicesDetailResponse == null)
                 return false;
-
-            Console.WriteLine("State: " + this.state.ToString());
-            Console.WriteLine("Found: " + orderedSensorList.Count);
 
             if (startState.DevicesDetailResponse.owd_DS18B20 == null)
                 return false;
@@ -136,7 +137,9 @@ namespace BeadedStream_HON
         {
             if (startState == null)
             {
-                state = States.WaitingForWire;
+                if (state != States.WaitingForWebsite) 
+                    state = States.WaitingForWire;
+
                 return false;
             }
 
@@ -230,6 +233,12 @@ namespace BeadedStream_HON
         public void UpdateSensorData()
         {
             RootObject wireData = GetSensorData();
+            if (wireData == null && startState == null && currentState == null)
+            {
+                this.state = States.WaitingForWebsite;
+                return;
+            }
+
             if (startState == null || !IsReady())
             {
                 startState = wireData;
@@ -271,6 +280,9 @@ namespace BeadedStream_HON
 
             // Download the details.xml file
             IRestResponse response = GetXMLFile("http://169.254.1.1/details.xml");
+
+            if (response.Content == null || response.Content == "")
+                return null;
 
             // Save the XML file
             System.IO.File.WriteAllText(@".\details.xml", response.Content);
