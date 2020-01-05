@@ -12,8 +12,12 @@ namespace BeadedStream_HON
 
         static void Main(string[] args)
         {
+            string techName;
+            Console.Write("Enter your name: ");
+            techName = Console.ReadLine();
+
             SensorSorter sensorSorter = new SensorSorter();
-            sensorSorter.Initialize(); // Get starting state
+            sensorSorter.Initialize(techName); // Get starting state
 
             bool done = false;
 
@@ -49,6 +53,11 @@ namespace BeadedStream_HON
             Console.Beep();
             Console.Beep();
             sensorSorter.PrintSensors(sensorSorter.orderedSensorList, "Final: ");
+
+            string report = sensorSorter.GenerateReportOutput();
+            Console.Write(report);
+
+            System.IO.File.WriteAllText(@".\report.txt", report);
         }
     }
 }
